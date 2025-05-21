@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  kali-xfce-novnc:
+    container_name: kali-xfce-novnc
+    image: kalilinux/kali-rolling
+    ports:
+      - "6080:6080"  # Zugriff im Browser über http://localhost:6080
+    tty: true
+    stdin_open: true
+    shm_size: "1gb"
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4096M
+    command: >
+      bash -c "
+        apt-get update &&
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends
+          xfce4 xfce4-goodies
+          tigervnc-standalone-server
+          novnc websockify
+          xterm wget net-tools curl
+          fonts-dejavu-core &&
+        
+        mkdir -p /root/.vnc /root/.config/tigervnc &&
+        echo 'kali' | vncpasswd -f > /root/.vnc/passwd &&
+        chmod 600 /root/.vnc/passwd &&
+        echo 'session=xfce4-session' > /root/.vnc/config &&
+        
+        vncserver :1 -geometry 1280x720 -depth 24 &&
+        
+        mkdir -p /opt/novnc/utils/websockify &&
+        ln -s /usr/share/novnc/utils/websockify /opt/novnc/utils/ ||
+          true &&  # manchmal ist das bereits verlinkt
+        
+        /usr/share/novnc/utils/novnc_proxy --vnc localhost:5901 --listen 6080"
